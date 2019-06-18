@@ -11,4 +11,14 @@ routes.post(
   multer(multerConfig).single('file'),
   FileController.store);
 
+routes.put("/:filesId", async(req, res) => {
+  res.send("files CRUD")
+});
+
+routes.get('/files', (req, res, next) => FileController.list(req, res, next));
+
+routes.delete("/:filesId", async(req, res) => {
+  res.send("files CRUD")
+});
+
 module.exports = routes;

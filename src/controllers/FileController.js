@@ -11,6 +11,11 @@ class FileController {
 
     return res.json(file);
   }
+
+  async list (req, res) {
+    const file = await File.find();
+    return res.json(file);
+  }
 }
 
 module.exports = new FileController();
