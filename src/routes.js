@@ -11,14 +11,15 @@ routes.post(
   multer(multerConfig).single('file'),
   FileController.store);
 
-routes.put("/:filesId", async(req, res) => {
-  res.send("files CRUD")
-});
-
 routes.get('/files', (req, res, next) => FileController.list(req, res, next));
 
-routes.delete("/:filesId", async(req, res) => {
-  res.send("files CRUD")
-});
+routes.get(
+  '/files/:id',
+  (req, res) => FileController.show(req, res));
 
-module.exports = routes;
+
+routes.delete(
+  '/files/:id',
+  (req, res, next) => FileController.destroy(req, res, next));
+
+module.exports = routes; 

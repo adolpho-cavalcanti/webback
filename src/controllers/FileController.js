@@ -16,6 +16,16 @@ class FileController {
     const file = await File.find();
     return res.json(file);
   }
+
+  async show(req, res) {
+    const file = await File.findById(req.params.id);
+      return res.json(file);
+  }
+
+  async destroy(req, res) {
+    const file = await File.findByIdAndRemove(req.params.id);
+    return res.send("Arquivo excluído"); 
+  } 
 }
 
-module.exports = new FileController();
+module.exports = new FileController(); 
