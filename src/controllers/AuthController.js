@@ -1,66 +1,55 @@
+const express = require('express');
+const bcrypt = require('bcryptjs');
+const jwt = require('jsonwebtoken');
+const authConfig = require('../config/auth');
+
 const User = require('../models/User');
 
-class AuthController {
+const routes = express.Router();
 
-  register(req, res) {
-    const body = req.body;
-
-    const email = body.email;
-    const name = body.name;
-    const password = body.password;
-    const password_confirm = body.password_confirm;
-
-    const errors = [];
-    if (name.length < 5) {
-      errors['name'] = 'Nome inválido';
-    }
-    if (email.length < 7) {
-      errors['email'] = 'Login inválido'
-    }
-    if (password.length < 3) {
-      errors['password'] = 'Senha curta'
-    }
-    if (password != password_confirm) {
-      errors['password'] = 'As senhas não são iguais'
-    }
-
-    User.find({ email }).then((user) => {
-      if (typeof user != 'undefined' && user.length > 0 || user._id) {
-        errors['email'] = 'Já existe um usuário com esse email';
-        console.log(errors);
-        return res.json( errors );
-      } else {
-        if (Object.keys(errors).length == 0) {
-          new User(body).save().then((user) => {
-            req.session.auth_user = user;
-            return res.json({
-              user,
-              "mensagem": "Usuário registrado!"
-            });
-          })
-        } else {
-          return res.json({errors});
-        }
-      }
-    })
-  }
-
-  auth(req, res) {
-    const email = req.body.email;
-    const password = req.body.password;
-
-    User.find({ email, password }).then((user) => {
-      console.log(user)
-      if (user.length == 1) {
-        req.session.auth_user = user;
-        return res.json(user);
-      } else {
-        res.status(403);
-        return res.json({ error: "Credenciais inválidas", title: "Fazer email" });
-      }
-    })
-  }
-
+function generateToken(params = {}) {
+  return jwt.sign(params, authConfig.secret, {
+    expiresIn: 86400,
+  });
 }
 
-module.exports = new AuthController(); 
+routes.post('/register', async (req, res) => {
+  const { email } = req.body;
+  try {
+    if(await User.findOne({ email }))
+      return res.status(400).send({ error: 'Usuario ja existe.' });
+
+    const user = await User.create(req.body);
+
+    user.password = undefined;
+
+    return res.send({ 
+      user,
+      token: generateToken({ id: user.id }),
+    });
+
+  }catch(err) {
+    return res.status(400).send({ error: 'Falha no registro.' });
+  }
+});
+
+routes.post('/authenticate', async (req, res) => {
+    const { email, password } = req.body;
+
+    const user = await User.findOne({ email }).select('+password');
+
+    if(!user)
+      return res.status(400).send({ error: 'Usuario nao encontrado.' });
+
+    if(!await bcrypt.compare(password, user.password))
+      return res.status(400).send({ error: 'Senha invalida.' });
+    
+    user.password = undefined;// remove o password da resposta da requisição
+
+    res.send({
+      user,
+      token: generateToken({ id: user.id }),
+    });
+});
+
+module.exports = app => app.use('/auth', routes);
