@@ -1,8 +1,10 @@
 const express = require('express');
 const mongoose = require('mongoose');
 const path = require('path');
+const cors = require('cors');
 
 const app = express();
+app.use(cors());
 
 mongoose.connect('mongodb+srv://elnino:elnino@cluster0-upvky.mongodb.net/projetoweb?retryWrites=true&w=majority', {
   useNewUrlParser: true,
